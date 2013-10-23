@@ -1,12 +1,17 @@
 package mx.labplc.codigo.taxis;
 import io.socket.SocketIO;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -25,6 +30,10 @@ public class TaxiActivity extends Activity {
 	 */
 	TextView tvCoordenadas;//se mostrarán las coordenadas y la distancia acumulada
 	SocketIO socket;//socket para la conección con el servidor
+	Button btnRunService ;
+	Button btnStopService;
+	private LocationManager mLocationManager;
+	
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -32,30 +41,54 @@ public class TaxiActivity extends Activity {
 		setContentView(R.layout.activity_taxi);
 		socket=new SocketConnection().connection();
 		
+		mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		/**
 		 * instancias y escuchas
 		 */
 		tvCoordenadas = (TextView) findViewById(R.id.tvCoordenadas);
-		Button btnRunService = (Button) findViewById(R.id.btnRunService);
+		btnRunService = (Button) findViewById(R.id.btnRunService);
 		btnRunService.setOnClickListener(new OnClickListener() {
 			public void onClick(View view) {
-				/**
-				 * Se inicia el servicio de geolocalización
-				 */
-				ServicioGeolocalizacion.taxiActivity = TaxiActivity.this;
-				startService(new Intent(TaxiActivity.this,ServicioGeolocalizacion.class));
+				if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+					showDialogGPS("GPS apagado", "¿Deseas activarlo?");		
+				}else{
+					/**
+					 * Se inicia el servicio de geolocalización
+					 */
+					ServicioGeolocalizacion.taxiActivity = TaxiActivity.this;
+					startService(new Intent(TaxiActivity.this,ServicioGeolocalizacion.class));
+					bloquearBoton(true);
+				}
+				
 			}
 		});
-		Button btnStopService = (Button) findViewById(R.id.btnStopService);
+		btnStopService = (Button) findViewById(R.id.btnStopService);
 		btnStopService.setOnClickListener(new OnClickListener() {
 			public void onClick(View view) {
 				/**
 				 * Se detiene el servicio de geolocalización
 				 */
+				bloquearBoton(false);
 				stopService(new Intent(TaxiActivity.this,ServicioGeolocalizacion.class));
 				tvCoordenadas.setText(getString(R.string.esperando));//regresamos a texto default
+
 			}
 		});
+	}
+	
+	/**
+	 * bloquea el boton que inicia el servicio
+	 * @param b (boolean)
+	 */
+	public void bloquearBoton(boolean b){
+		if(b==true){
+			btnRunService.setEnabled(false);
+			btnStopService.setEnabled(true);
+		}else{
+			btnRunService.setEnabled(true);
+			btnStopService.setEnabled(false);
+		}
+		
 	}
 
 	/**
@@ -101,4 +134,37 @@ public class TaxiActivity extends Activity {
 		registerReceiver(onBroadcast, new IntentFilter("key"));
 		super.onResume();
 	}
+	
+	
+	
+	/**
+	 * Muestra diálogo en dado caso que el GPS esté apagado
+	 * 
+	 * @param titulo Título del diálogo
+	 * @param message Mensaje del diálogo
+	 */
+	public void showDialogGPS(String title, String message) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(TaxiActivity.this);
+        builder.setTitle(title);
+        builder.setMessage(message);
+		builder.setPositiveButton("Sí", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				Intent settingsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+				settingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+				startActivity(settingsIntent);
+			}
+		});
+		builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				dialog.cancel();
+			}
+		});
+		
+		AlertDialog dialog = builder.create();
+		dialog.show();
+		dialog.setCancelable(false);
+		dialog.setCanceledOnTouchOutside(false);
+	}
+	
+	
 }

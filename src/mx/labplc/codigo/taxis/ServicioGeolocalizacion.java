@@ -16,6 +16,11 @@ import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
+/**
+ * 
+ * @author mikesaurio
+ *
+ */
 public class ServicioGeolocalizacion extends Service implements Runnable{
 	/**
 	 * Declaración de variables
@@ -39,7 +44,7 @@ public class ServicioGeolocalizacion extends Service implements Runnable{
 
     @Override
     public int onStartCommand(Intent intenc, int flags, int idArranque) {
-          Toast.makeText(this,"Servicio arrancado "+ idArranque,Toast.LENGTH_SHORT).show();  
+         // Toast.makeText(this,"Servicio arrancado "+ idArranque,Toast.LENGTH_SHORT).show();  
           obtenerSenalGPS();
           return START_STICKY;
     }
@@ -120,41 +125,14 @@ public class ServicioGeolocalizacion extends Service implements Runnable{
 			taxiActivity.runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					showDialogGPS("GPS apagado", "¿Deseas activarlo?");					
+					Toast.makeText(getApplicationContext(), "GPS apagado inesperadamente", Toast.LENGTH_LONG).show();			
 				}
 			});
 		}
 	}
 
 
-	/**
-	 * Muestra diálogo en dado caso que el GPS esté apagado
-	 * 
-	 * @param titulo Título del diálogo
-	 * @param message Mensaje del diálogo
-	 */
-	public void showDialogGPS(String title, String message) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(taxiActivity);
-        builder.setTitle(title);
-        builder.setMessage(message);
-		builder.setPositiveButton("Sí", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				Intent settingsIntent = new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-				settingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-				startActivity(settingsIntent);
-			}
-		});
-		builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int id) {
-				dialog.cancel();
-			}
-		});
-		
-		AlertDialog dialog = builder.create();
-		dialog.show();
-		dialog.setCancelable(false);
-		dialog.setCanceledOnTouchOutside(false);
-	}
+	
 
 	/**
 	 * Metodo para Obtener la señal del GPS
@@ -177,18 +155,21 @@ public class ServicioGeolocalizacion extends Service implements Runnable{
 	private class MyLocationListener implements LocationListener {
 
 		public void onLocationChanged(Location loc) {
-			Log.d("finura",loc.getAccuracy()+"");
+			//Log.d("finura",loc.getAccuracy()+"");
 			if (loc != null) {
 				setCurrentLocation(loc);
 				handler.sendEmptyMessage(0);
 			}
 		}
 
+		/**
+		 * metodo que revisa si el GPS esta apagado
+		 */
 		public void onProviderDisabled(String provider) {
 			taxiActivity.runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					showDialogGPS("GPS apagado", "¿Deseas activarlo?");					
+					Toast.makeText(getApplicationContext(), "GPS apagado inesperadamente", Toast.LENGTH_LONG).show();			
 				}
 			});
 		}
