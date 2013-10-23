@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Taxis</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="esperando">esperando...</string>
+    <string name="arranacarServicio">Arrancar servicio</string>
+    <string name="detenerServicio">Detener servicio</string>
+
+</resources>
